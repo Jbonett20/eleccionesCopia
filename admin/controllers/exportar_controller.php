@@ -105,7 +105,7 @@ function exportarVotantes() {
                                       LEFT JOIN lideres l ON v.id_lider = l.id_lider
                                       LEFT JOIN usuarios u ON v.id_administrador_directo = u.id_usuario
                                       WHERE v.id_estado = 1
-                                      ORDER BY v.fecha_creacion DESC");
+                                      ORDER BY l.id_lider DESC");
     } else {
         $votantes = DB::queryAllRows("SELECT v.*, t.nombre_tipo, 
                                       CONCAT(l.nombres, ' ', l.apellidos) as lider_nombre,
@@ -115,7 +115,7 @@ function exportarVotantes() {
                                       LEFT JOIN lideres l ON v.id_lider = l.id_lider
                                       LEFT JOIN usuarios u ON v.id_administrador_directo = u.id_usuario
                                       WHERE v.id_usuario_creador = ? AND v.id_estado = 1
-                                      ORDER BY v.fecha_creacion DESC", $usuario_id);
+                                      ORDER BY l.id_lider DESC", $usuario_id);
     }
     
     // Limpiar buffers y configurar headers
