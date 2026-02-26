@@ -3,6 +3,7 @@ $(document).ready(function() {
     const esLider = $('#es_lider').val() === '1';
     const esSuperAdmin = $('#es_superadmin').val() === '1';
     let filtroActual = 'todos';
+    let filtroTipoActual = 'todos';
 
     function actualizarResumen(datos) {
         const lista = Array.isArray(datos) ? datos : [];
@@ -16,7 +17,15 @@ $(document).ready(function() {
     }
 
     let columns = [
-        { data: 'id_votante' },
+        {
+            data: 'id_registro',
+            render: function(data, type, row) {
+                if (parseInt(row.es_lider_registro, 10) === 1) {
+                    return `<span class="fw-semibold">${data}</span> <span class="badge bg-info text-dark">LÍDER</span>`;
+                }
+                return data;
+            }
+        },
         { data: 'nombres' },
         { data: 'apellidos' },
         { data: 'identificacion' },
@@ -51,6 +60,13 @@ $(document).ready(function() {
         columns.push({
             data: null,
             render: function(data) {
+                if (parseInt(data.es_lider_registro, 10) === 1) {
+                    if (data.admin_directo) {
+                        return '<span class="badge bg-primary">' + data.admin_directo + '</span>';
+                    }
+                    return '<span class="badge bg-info text-dark">Registro líder</span>';
+                }
+
                 if (data.lider_nombres && data.lider_apellidos) {
                     return '<span class="badge bg-info">' + data.lider_nombres + ' ' + data.lider_apellidos + '</span>';
                 }
@@ -88,12 +104,15 @@ $(document).ready(function() {
             searchable: false,
             render: function(data) {
                 const yaVoto = parseInt(data.chequeado, 10) === 2;
+                const esRegistroLider = parseInt(data.es_lider_registro, 10) === 1;
                 const clase = yaVoto ? 'btn-secondary' : 'btn-success';
                 const icono = yaVoto ? 'fa-rotate-left' : 'fa-check';
                 const texto = yaVoto ? 'Quitar marca' : 'Marcar votó';
+                const idRegistro = parseInt(data.id_registro, 10) || parseInt(data.id_votante, 10);
+                const tipoRegistro = esRegistroLider ? 'lider' : 'votante';
 
                 return `
-                    <button class="btn btn-sm ${clase}" onclick="toggleChequeado(${data.id_votante}, ${data.chequeado}, '${(data.nombres + ' ' + data.apellidos).replace(/'/g, "\\'")}')">
+                    <button class="btn btn-sm ${clase}" onclick="toggleChequeado(${idRegistro}, ${data.chequeado}, '${(data.nombres + ' ' + data.apellidos).replace(/'/g, "\\'")}', '${tipoRegistro}')">
                         <i class="fas ${icono}"></i> ${texto}
                     </button>
                 `;
@@ -143,6 +162,14 @@ $(document).ready(function() {
             actualizarResumen(visibles);
         },
         createdRow: function(row, data) {
+            if (parseInt(data.es_lider_registro, 10) === 1) {
+                $(row).addClass('fila-lider-control');
+                if (parseInt(data.chequeado, 10) === 2) {
+                    $(row).addClass('fila-lider-control-ya-voto');
+                }
+                return;
+            }
+
             if (parseInt(data.chequeado, 10) === 2) {
                 $(row).addClass('table-success');
             }
@@ -160,12 +187,12 @@ $(document).ready(function() {
         }
 
         const chequeado = parseInt(fila.chequeado, 10) === 2 ? 'ya_voto' : 'sin_votar';
+        const tipoRegistro = parseInt(fila.es_lider_registro, 10) === 1 ? 'lider' : 'votante';
 
-        if (filtroActual === 'todos') {
-            return true;
-        }
+        const cumpleEstado = filtroActual === 'todos' ? true : chequeado === filtroActual;
+        const cumpleTipo = filtroTipoActual === 'todos' ? true : tipoRegistro === filtroTipoActual;
 
-        return chequeado === filtroActual;
+        return cumpleEstado && cumpleTipo;
     });
 
     $('[data-filtro]').on('click', function() {
@@ -175,12 +202,20 @@ $(document).ready(function() {
         tablaControl.draw();
     });
 
-    window.toggleChequeado = function(idVotante, chequeado, nombreCompleto) {
+    $('[data-filtro-tipo]').on('click', function() {
+        filtroTipoActual = $(this).data('filtro-tipo');
+        $('[data-filtro-tipo]').removeClass('active');
+        $(this).addClass('active');
+        tablaControl.draw();
+    });
+
+    window.toggleChequeado = function(idVotante, chequeado, nombreCompleto, tipoRegistro = 'votante') {
         const yaVoto = parseInt(chequeado, 10) === 2;
+        const etiqueta = tipoRegistro === 'lider' ? 'líder' : 'votante';
 
         Swal.fire({
             title: yaVoto ? '¿Quitar marca de voto?' : '¿Estás seguro de marcar YA VOTÓ?',
-            text: nombreCompleto,
+            text: `${nombreCompleto} (${etiqueta})`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: yaVoto ? '#6b7280' : '#16a34a',
@@ -198,7 +233,8 @@ $(document).ready(function() {
                 dataType: 'json',
                 data: {
                     action: 'marcar_chequeado',
-                    id_votante: idVotante
+                    id_votante: idVotante,
+                    tipo_registro: tipoRegistro
                 },
                 success: function(response) {
                     if (response && response.success) {
