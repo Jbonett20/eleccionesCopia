@@ -113,6 +113,18 @@
     color: white;
 }
 
+.fila-lider-control {
+    background-color: rgba(13, 202, 240, 0.12) !important;
+}
+
+.fila-lider-control td {
+    border-bottom-color: rgba(13, 202, 240, 0.3) !important;
+}
+
+.fila-lider-control-ya-voto {
+    background-color: rgba(32, 201, 151, 0.2) !important;
+}
+
 /* Action Buttons */
 .btn-action {
     width: 35px;

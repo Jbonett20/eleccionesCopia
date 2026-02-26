@@ -31,7 +31,7 @@ $es_superadmin = ($usuario_rol == 1);
             <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div>
                     <h1><i class="fas fa-check-double"></i> Control de Votación</h1>
-                    <p>Marca y consulta quién ya votó</p>
+                    <p>Marca y consulta quién ya votó (votantes y líderes)</p>
                 </div>
                 <button class="btn btn-success" onclick="exportarControlExcel()">
                     <i class="fas fa-file-excel"></i> Exportar a Excel
@@ -43,7 +43,7 @@ $es_superadmin = ($usuario_rol == 1);
                     <div class="card h-100">
                         <div class="card-body d-flex align-items-center justify-content-between">
                             <div>
-                                <small class="text-muted">Total</small>
+                                <small class="text-muted">Total registros</small>
                                 <h4 class="mb-0" id="totalVotantesControl">0</h4>
                             </div>
                             <i class="fas fa-users fs-4 text-primary"></i>
@@ -77,7 +77,7 @@ $es_superadmin = ($usuario_rol == 1);
             <div class="card mb-3">
                 <div class="card-body py-3">
                     <div class="d-flex flex-wrap align-items-center gap-2">
-                        <span class="fw-semibold me-2">Filtro rápido:</span>
+                        <span class="fw-semibold me-2">Estado:</span>
                         <div class="btn-group" role="group" aria-label="Filtro estado voto">
                             <button type="button" class="btn btn-outline-primary active" id="filtroTodos" data-filtro="todos">
                                 Todos
@@ -89,13 +89,26 @@ $es_superadmin = ($usuario_rol == 1);
                                 Ya votó
                             </button>
                         </div>
+
+                        <span class="fw-semibold ms-2 me-2">Tipo:</span>
+                        <div class="btn-group" role="group" aria-label="Filtro tipo registro">
+                            <button type="button" class="btn btn-outline-primary active" data-filtro-tipo="todos">
+                                Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-filtro-tipo="votante">
+                                Solo votantes
+                            </button>
+                            <button type="button" class="btn btn-outline-info" data-filtro-tipo="lider">
+                                Solo líderes
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-list"></i> Votantes</h5>
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Registros de control</h5>
                 </div>
                 <div class="card-body">
                     <input type="hidden" id="es_lider" value="<?php echo $es_lider ? '1' : '0'; ?>">
