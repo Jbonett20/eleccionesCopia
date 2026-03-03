@@ -26,6 +26,9 @@ switch ($action) {
     case 'marcar_chequeado':
         marcarChequeado();
         break;
+    case 'consultar_cedula':
+        consultarCedula();
+        break;
     case 'exportar_control':
         exportarControl();
         break;
@@ -297,6 +300,89 @@ function marcarChequeado() {
         ]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error al actualizar estado: ' . $e->getMessage()]);
+    }
+}
+
+function consultarCedula() {
+    try {
+        $cedula = trim($_POST['cedula'] ?? '');
+        
+        if (empty($cedula) || !ctype_digit($cedula)) {
+            echo json_encode(['success' => false, 'message' => 'Cédula inválida. Solo se aceptan números.']);
+            return;
+        }
+
+        // Buscar en votantes sin restricciones de permisos
+        $queryVotante = "SELECT
+                            v.id_votante,
+                            'votante' AS tipo_registro,
+                            v.nombres,
+                            v.apellidos,
+                            v.identificacion,
+                            t.nombre_tipo,
+                            v.mesa,
+                            v.lugar_mesa,
+                            v.telefono,
+                            v.sexo,
+                            COALESCE(v.chequeado, 1) AS chequeado,
+                            l.nombres AS lider_nombres,
+                            l.apellidos AS lider_apellidos,
+                            u_admin.nombres AS admin_nombres,
+                            u_admin.apellidos AS admin_apellidos,
+                            u_prop.nombres AS propietario_nombres,
+                            u_prop.apellidos AS propietario_apellidos
+                         FROM votantes v
+                         INNER JOIN tipos_identificacion t ON v.id_tipo_identificacion = t.id_tipo_identificacion
+                         LEFT JOIN lideres l ON v.id_lider = l.id_lider
+                         LEFT JOIN usuarios u_admin ON v.id_administrador_directo = u_admin.id_usuario
+                         LEFT JOIN usuarios u_prop ON u_prop.id_usuario = COALESCE(v.id_administrador_directo, l.id_usuario_creador)
+                         WHERE v.identificacion = ?
+                           AND v.id_estado = 1
+                         LIMIT 1";
+        
+        $votante = DB::queryFirstRow($queryVotante, $cedula);
+        
+        if ($votante) {
+            echo json_encode(['success' => true, 'data' => $votante]);
+            return;
+        }
+
+        // Buscar en líderes sin restricciones de permisos
+        $queryLider = "SELECT
+                        l.id_lider,
+                        'lider' AS tipo_registro,
+                        l.nombres,
+                        l.apellidos,
+                        l.identificacion,
+                        t.nombre_tipo,
+                        NULL AS mesa,
+                        NULL AS lugar_mesa,
+                        l.telefono,
+                        l.sexo,
+                        COALESCE(l.chequeado, 1) AS chequeado,
+                        l.nombres AS lider_nombres,
+                        l.apellidos AS lider_apellidos,
+                        'Es Líder' AS admin_nombres,
+                        '' AS admin_apellidos,
+                        u_prop.nombres AS propietario_nombres,
+                        u_prop.apellidos AS propietario_apellidos
+                     FROM lideres l
+                     INNER JOIN tipos_identificacion t ON l.id_tipo_identificacion = t.id_tipo_identificacion
+                     LEFT JOIN usuarios u_prop ON u_prop.id_usuario = l.id_usuario_creador
+                     WHERE l.identificacion = ?
+                       AND l.id_estado = 1
+                     LIMIT 1";
+        
+        $lider = DB::queryFirstRow($queryLider, $cedula);
+        
+        if ($lider) {
+            echo json_encode(['success' => true, 'data' => $lider]);
+            return;
+        }
+
+        echo json_encode(['success' => false, 'message' => 'No se encontró ningún registro con esa cédula.']);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error al consultar cédula: ' . $e->getMessage()]);
     }
 }
 
