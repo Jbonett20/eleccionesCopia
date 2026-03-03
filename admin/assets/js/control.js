@@ -271,3 +271,147 @@ $(document).ready(function() {
 function exportarControlExcel() {
     window.location.href = '../controllers/control_controller.php?action=exportar_control';
 }
+// Funcionalidad de Consulta por Cédula
+$(document).ready(function() {
+    // Validar que solo se acepten números en el campo de cédula
+    $('#cedulaConsulta').on('keypress', function(e) {
+        const char = String.fromCharCode(e.which);
+        if (!/[0-9]/.test(char)) {
+            e.preventDefault();
+        }
+    }).on('paste', function(e) {
+        e.preventDefault();
+        const texto = (e.originalEvent?.clipboardData || window.clipboardData).getData('text');
+        if (/^\d+$/.test(texto)) {
+            $(this).val(texto);
+        }
+    });
+
+    // Botón de consulta
+    $('#btnConsultarCedula').on('click', function() {
+        const cedula = $('#cedulaConsulta').val().trim();
+        
+        if (!cedula) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Ingrese una cédula',
+                text: 'Por favor ingrese un número de cédula para consultar'
+            });
+            return;
+        }
+
+        $.ajax({
+            url: '../controllers/control_controller.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'consultar_cedula',
+                cedula: cedula
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    mostrarModalConsulta(response.data);
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'No encontrado',
+                        text: response.message || 'No se encontró ningún registro con esa cédula.'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al consultar la cédula'
+                });
+            }
+        });
+    });
+
+    // Permitir buscar con Enter
+    $('#cedulaConsulta').on('keydown', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            $('#btnConsultarCedula').click();
+        }
+    });
+});
+
+function ctype_digit(str) {
+    return /^\d+$/.test(str);
+}
+
+function mostrarModalConsulta(data) {
+    const tipoRegistro = data.tipo_registro || '';
+    const esLider = tipoRegistro === 'lider';
+    const yaVoto = parseInt(data.chequeado) === 2;
+    
+    let html = '<div class="table-responsive">';
+    html += '<table class="table table-sm table-borderless">';
+    
+    // Información básica
+    html += '<tr><td class="fw-semibold">Cédula:</td><td>' + (data.identificacion || 'N/A') + '</td></tr>';
+    html += '<tr><td class="fw-semibold">Nombres:</td><td>' + (data.nombres || 'N/A') + '</td></tr>';
+    html += '<tr><td class="fw-semibold">Apellidos:</td><td>' + (data.apellidos || 'N/A') + '</td></tr>';
+    html += '<tr><td class="fw-semibold">Tipo ID:</td><td>' + (data.nombre_tipo || 'N/A') + '</td></tr>';
+    
+    // Mesa y lugar
+    if (data.mesa !== null && data.mesa !== '' && data.mesa !== undefined) {
+        html += '<tr><td class="fw-semibold">Mesa:</td><td>' + (data.mesa || 'N/A') + '</td></tr>';
+    }
+    
+    if (data.lugar_mesa !== null && data.lugar_mesa !== '' && data.lugar_mesa !== undefined) {
+        html += '<tr><td class="fw-semibold">Lugar Mesa:</td><td>' + (data.lugar_mesa || 'N/A') + '</td></tr>';
+    }
+    
+    // Tipo de registro
+    if (esLider) {
+        html += '<tr><td class="fw-semibold">Tipo:</td><td><span class="badge bg-info text-dark">LÍDER</span></td></tr>';
+    } else {
+        html += '<tr><td class="fw-semibold">Tipo:</td><td><span class="badge bg-secondary">VOTANTE</span></td></tr>';
+    }
+    
+    // Información de líder/administrador
+    if (esLider) {
+        html += '<tr><td class="fw-semibold">Registrado por:</td><td>' + 
+                (data.propietario_nombres ? (data.propietario_nombres + ' ' + (data.propietario_apellidos || '')).trim() : 'N/A') + 
+                '</td></tr>';
+    } else {
+        // Si es votante, mostrar si tiene un líder
+        if (data.lider_nombres && data.lider_apellidos) {
+            html += '<tr><td class="fw-semibold">Líder:</td><td>' + (data.lider_nombres + ' ' + data.lider_apellidos).trim() + '</td></tr>';
+        }
+        
+        // Mostrar administrador
+        if (data.admin_nombres && data.admin_nombres !== 'N/A') {
+            html += '<tr><td class="fw-semibold">Registrado por:</td><td>' + 
+                    (data.admin_nombres + ' ' + (data.admin_apellidos || '')).trim() + 
+                    '</td></tr>';
+        } else if (data.propietario_nombres) {
+            html += '<tr><td class="fw-semibold">Administrador:</td><td>' + 
+                    (data.propietario_nombres + ' ' + (data.propietario_apellidos || '')).trim() + 
+                    '</td></tr>';
+        }
+    }
+    
+    // Estado de voto
+    html += '<tr><td class="fw-semibold">Estado de Voto:</td><td>';
+    if (yaVoto) {
+        html += '<span class="badge bg-success">YA VOTÓ</span>';
+    } else {
+        html += '<span class="badge bg-warning text-dark">SIN VOTAR</span>';
+    }
+    html += '</td></tr>';
+    
+    html += '</table>';
+    html += '</div>';
+    
+    $('#modalConsultaContenido').html(html);
+    
+    const modalElement = new bootstrap.Modal(document.getElementById('modalConsultaCedula'));
+    modalElement.show();
+    
+    // Limpiar el campo después de mostrar
+    $('#cedulaConsulta').val('');
+}

@@ -106,6 +106,23 @@ $es_superadmin = ($usuario_rol == 1);
                 </div>
             </div>
 
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-search"></i> Consultar por Cédula</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2 align-items-end">
+                        <div class="flex-grow-1" style="min-width: 250px;">
+                            <label for="cedulaConsulta" class="form-label">Número de Cédula</label>
+                            <input type="text" id="cedulaConsulta" class="form-control" placeholder="Ej: 1234567890" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <button type="button" class="btn btn-info" id="btnConsultarCedula">
+                            <i class="fas fa-search"></i> Consultar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="fas fa-list"></i> Registros de control</h5>
@@ -140,6 +157,24 @@ $es_superadmin = ($usuario_rol == 1);
                             <tbody></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Consulta por Cédula -->
+    <div class="modal fade" id="modalConsultaCedula" tabindex="-1" aria-labelledby="modalConsultaCedulaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConsultaCedulaLabel">Información de la Cédula</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalConsultaContenido">
+                    <!-- Se llenará dinámicamente con JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
